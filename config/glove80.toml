@@ -157,17 +157,13 @@ action = "RGB_TOG"
 
 # E reads the state RGB_TOG flips: green while effects render, dim red while
 # they are toggled off.
-[[lighting.conditional_scene]]
-key = [2, 3]
+[[layer.key.rule]]
 color = "#008000"
-layer = { layer = 2, active = true }
-effects = { enabled = true }
+when = { effects = { enabled = true } }
 
-[[lighting.conditional_scene]]
-key = [2, 3]
+[[layer.key.rule]]
 color = "#800000"
-layer = { layer = 2, active = true }
-effects = { enabled = false }
+when = { effects = { enabled = false } }
 
 [[layer.key]]
 key = [2, 4]  # R: maintenance lock toggle
@@ -179,23 +175,17 @@ action = "UG_OMODE"
 
 # T shows the live output-mode policy, which is what let the indicator stop
 # being compiled into the firmware.
-[[lighting.conditional_scene]]
-key = [2, 5]
+[[layer.key.rule]]
 color = "#008000"
-layer = { layer = 2, active = true }
-output_mode = "always-on"
+when = { output_mode = "always-on" }
 
-[[lighting.conditional_scene]]
-key = [2, 5]
+[[layer.key.rule]]
 color = "#800000"
-layer = { layer = 2, active = true }
-output_mode = "always-off"
+when = { output_mode = "always-off" }
 
-[[lighting.conditional_scene]]
-key = [2, 5]
+[[layer.key.rule]]
 color = "#0040a0"
-layer = { layer = 2, active = true }
-output_mode = "powered-only"
+when = { output_mode = "powered-only" }
 
 [[layer.key]]
 key = [3, 0]
