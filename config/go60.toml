@@ -70,14 +70,16 @@ KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS -- -- KC_TRNS KC_TRNS KC_TRNS KC
 -- -- KC_TRNS KC_TRNS KC_TRNS -- -- -- -- KC_TRNS KC_TRNS KC_TRNS -- --
 """
 
+# F/A/S/L/O select Fable/Astra/Sol/Luna/Opus; Q/M/H select low/medium/high
+# effort. F13-F20 are the host shortcut namespace shared with the Glove80.
 [[layer]]
 id = "layer5"
 name = "Paseo"
 keys = """
 
 KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS
-KC_TRNS KC_F17 KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_F14 KC_TRNS KC_TRNS
-KC_TRNS KC_TRNS KC_F15 KC_TRNS KC_F13 KC_TRNS KC_TRNS KC_TRNS KC_F19 KC_TRNS KC_TRNS KC_F16 KC_TRNS KC_TRNS
+KC_TRNS KC_F17 KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_F20 KC_TRNS KC_TRNS
+KC_TRNS KC_F14 KC_F15 KC_TRNS KC_F13 KC_TRNS KC_TRNS KC_TRNS KC_F19 KC_TRNS KC_TRNS KC_F16 KC_TRNS KC_TRNS
 KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS -- -- KC_TRNS KC_F18 KC_TRNS KC_TRNS KC_TRNS KC_TRNS
 -- -- KC_TRNS KC_TRNS KC_TRNS -- -- -- -- KC_TRNS KC_TRNS KC_TRNS -- --
 """
@@ -265,6 +267,7 @@ scene = [
   # Paseo mnemonic colors.
   { layer = 5, led = 9, color = "#d06040" },
   { layer = 5, led = 48, color = "#d06040" },
+  { layer = 5, led = 24, color = "#0080ff" },
   { layer = 5, led = 19, color = "#0080ff" },
   { layer = 5, led = 49, color = "#0080ff" },
   { layer = 5, led = 23, color = "#00c040" },
