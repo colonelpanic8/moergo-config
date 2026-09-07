@@ -213,6 +213,7 @@ topology_revision = 1
 
 [lighting.controls]
 wake_layers = [3]
+wake_linger_ms = 20000
 
 [[lighting.zone]]
 id = 1
