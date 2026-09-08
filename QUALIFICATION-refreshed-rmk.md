@@ -1,6 +1,202 @@
-# Refreshed RMK qualification — jay-lenovo, 2026-09-07
+# Refreshed RMK qualification — jay-lenovo, 2026-09-08
 
-## Current result after host repair
+## Current result: paired reset loop repaired
+
+**The keyboard is running the refreshed firmware with a lighting stack-use
+repair, not the recovery firmware.** Both clean candidate halves were flashed,
+central first. They connected and reported `IN SYNC` / `Healthy`. A two-minute
+USB watch observed no disappearance or device-number change. A subsequent
+software reboot reconnected the split without restarting the loop.
+
+This resolves the paired reset failure recorded below. Qualification also
+found an outstanding lighting persistence defect: output mode and nine effect
+parameters revert after reboot. Keymap, scene tables, and conditional rules
+survived that reboot. Physical battery, unplug/replug, and pointing coverage
+remain incomplete; this is not blanket qualification of every audit repair.
+
+### What changed and why
+
+The fix is confined to three files on the owning lighting topic:
+
+- Make the mailbox command handler synchronous; its former async body had no
+  awaits.
+- Keep command dispatch boundaries out of line.
+- Move replica export/import bodies into separate out-of-line helpers, keeping
+  the large import temporaries out of ordinary commands on the central.
+
+The command behavior, replica validation/application order, storage keys, and
+wire protocol are unchanged. No reset suppression, BLE error trap, partition
+change, or diagnostic firmware hook remains in the shipped source.
+
+The evidence supports excessive **RAM stack use**, rather than Glove80 flash
+exhaustion, as the reset cause. The failing original image fit its application
+partition. A diagnostic build that reproduced the paired failure had 96,432
+bytes between static allocations and the initial stack pointer. Disassembly
+showed a direct call chain subtracting 100,956 bytes from the stack before
+counting saved registers, indirect calls, or interrupts. That is a static
+build finding, not a measured hardware stack high-water mark or a captured
+fault address.
+
+The failing diagnostic build's lighting mailbox frame subtracted 41,652 bytes. After the
+repair, the clean central's general engine command frame subtracts 7,964 bytes;
+its synchronous mailbox and service frames subtract 384 and 812 bytes. Large
+replica import work remains separate and is used by the peripheral, which has
+more RAM headroom. The central exports snapshots. The clean central has
+98,064 bytes between `__sheap = 0x20027cf8` and `_stack_start = 0x2003fc08`;
+ELF sections report text 704,704, data 27,188, and BSS 135,864 bytes. These
+numbers are not a complete stack bound for every RMK configuration.
+
+Hardware comparisons support the diagnosis: panic-recording, BLE runner-error
+trapping, and explicit reboot trapping variants still looped after pairing.
+Their readable diagnostics showed increasing boots and reset reason `0x4`,
+without a retained panic, runner error, or explicit reboot caller. Timing alone
+was not used to identify the cause. The lighting frame repair stopped the
+observed loop both with those diagnostics and after removing them.
+
+### Published sources and installed images
+
+| Component | Commit |
+| --- | --- |
+| Owning lighting topic | `7d143d52416486dec1c714990df25674c115617b` |
+| Published/tested RMK assembled | `6d4a05da37da00a6700ad3296aa982445f4f6fab` |
+| Assembly recipe | `88b80ff0df89b114064cf784deb600682df0d0e1` |
+| Product used for the flashed build | `aee5a66333ae7ec98c9261f5aa24bc8833d4ab3b` |
+| Published product pin, adding only the recipe gitlink | `1a2b95a5075f8bb3f02109b84128759a427d659e` |
+| Outer product pin | `fed442e1a22a287a4f019fb3b9e57753a1accb21` |
+
+The topic, assembled branch, recipe, and product are pushed to their owning
+forks. The upstream base remains `8b4d1b31`; the original split topic remains
+`8158777f`. Locked assembly builds reproduced tree
+`fb6077d7c3a77fd4ad1a202e5b4c7daa5b78424d`, including after restoring the
+manifest's public fork URL. Generated commit IDs differ between rebuilds;
+that tree is the reproducibility invariant. The product's last commit changes
+only the assembly recipe gitlink, not firmware source. The installed firmware
+reports the actual tested build's identity:
+
+```text
+config 759d4c30-dirty / glove80-rmk v0.1.0 (aee5a663) / RMK 6d4a05da
+```
+
+Built with Rust 1.97.0, the absolute outer `config/firmware.toml`, and outer
+provenance. The product was clean. Validated all UF2 block headers, block
+counts/order, contiguous addresses, family IDs, and application bounds before
+flashing. Final installed artifacts:
+
+```text
+left  0x26000–0xd8b00  family 0x9807b007
+      8e152c2a0800d60ba2cda322c9c8cb587d52c5ca01754813c3a30a4303959f57
+right 0x26000–0x89c00  family 0x9808b007
+      2565e2ecef696699c142a9688f172bb3fd870598fe8454b42775990f1e5da04c
+```
+
+Both are smaller than the failing handoff-range images. Exact original recovery
+application UF2s listed below remain available. Each diagnostic trial and the
+final candidate were flashed central first with recovery available and the
+right staged in its bootloader. The final central passed the 45-second watch
+before the matching right was flashed. A separate right firmware version was
+not read; the right UF2 copy and healthy split telemetry are the observations.
+
+### Hardware and runtime checks
+
+The diagnostic repair pair accepted `just apply`; independent `just diff`
+reported `keyboard matches configuration`, and `just show` exported it. Moving
+to the clean build reset configuration again: its initial diff found 197
+differences. Therefore the update itself is not evidence of persistence.
+The clean firmware then passed apply, independent diff, and export as well.
+
+At 07:31:55 UTC the clean pair had USB device number 89. A watch sampled it
+240 times at 0.5-second intervals and observed no changes. Replica telemetry
+reported a connected, healthy link with matching digests. Split transport
+status reported `fixed (this board has no automatic wired/BLE policy)`;
+forcing BLE, wired, and auto each returned `Invalid`. The two-way force and
+missing-ack timeout paths are unavailable on this compiled BLE-only board;
+no wired serial deadline claim is made.
+
+For the reboot test, a temporary local `moergo-control` extension invoked the
+existing Rynk `Reboot` command and waited for disconnect. The CLI patch and
+executable are retained with evidence; its source edits were removed and were
+not published. No firmware flash was used merely to reboot. USB changed from
+89 to absent at 07:34:23 UTC and reappeared as 90 at 07:34:24 UTC. A 55-second
+watch saw only this expected transition. Firmware identity was unchanged and
+the replica returned `IN SYNC` / `Healthy`.
+
+Independent post-reboot diff found exactly these differences:
+
+| Setting | Source / before reboot | After reboot |
+| --- | --- | --- |
+| Output mode | PoweredOnly | AlwaysOn |
+| Crosshair: Arm hue | 0 | 172 |
+| Crosshair: Arm width | 11 | 8 |
+| Crosshair: Crosses | 1 | 4 |
+| Crosshair: Duration x10ms | 90 | 16 |
+| Crosshair: Key hue | 173 | 16 |
+| Crosshair: Pulse width | 170 | 56 |
+| Rain: Drops | 11 | 6 |
+| Rain: Spawn x10ms | 5 | 30 |
+| Rain: Trail | 161 | 128 |
+
+No keymap, layer, scene, or conditional-rule differences were reported. This
+supports persistence of those managed records through this software reboot;
+it is not a visual LED check. The ten settings above need a separate firmware
+persistence investigation. Their failure was observed on this candidate; it
+was not established whether the stack repair introduced it. Reapplying the
+TOML is a runtime workaround, not a persistence fix.
+
+After the reboot test, `just apply` restored and verified the source TOML;
+independent `just diff` reported `keyboard matches configuration`, and
+`just show` exported the final state. The first replica read was `RESYNCING`
+while finishing the update. A later read reported `IN SYNC`, revision 10,
+`Healthy`, `durable_dirty: false`, no pending acknowledgement, and matching
+central/peripheral digests. The final version read still identifies the clean
+`aee5a663` / `6d4a05da` firmware. These settings are restored now; the ten
+persistence failures can recur on another reboot.
+
+No physical battery-source change or unplug/replug was performed. No attached
+pointing pad was established or pad/modifier/button interaction exercised.
+The powered-only authority/local VBUS distinction and pointing fixes remain
+unqualified. Software reboot/split convergence does not replace those tests.
+
+### Software verification and remaining build limitations
+
+- Focused RMK lighting suite on the clean assembled tree: 123 passed,
+  648 skipped. Includes replica and host loopback coverage.
+- Changed Rust files pass formatting. Whole-crate formatting reports an
+  existing unrelated difference in `keyboard.rs:1386`, left untouched.
+- RMK library clippy reports an existing `new_without_default` on `Crc32`.
+  With that single lint allowed, the same library check passes. No source
+  suppression was added.
+- Rynk: 39 library tests and one doctest passed; its workspace also ran 43
+  KLE and two USB tests successfully. Native/no-default checks and the
+  explicit Rynk WASM check passed.
+- Protocol tests again report 89 passed and the same two known stale snapshot
+  failures (`wire_values_locked` and `wire_frames_locked`). Protocol sources
+  are unchanged by this three-file repair; prior baseline comparison is below.
+- Product `just parity-check` passed. Outer `just check` passed both firmware
+  configuration parity checks and both runtime TOML validations.
+- Both Glove80 halves built and linked. The Go60 release bundle was attempted
+  with its own outer firmware configuration and still cannot link: `.data`
+  overflows FLASH by 10,604 bytes and `.gnu.sgstubs` by 10,624 bytes. No Go60
+  was attached/flashed; no Go60 partition or feature changes were made.
+
+Evidence is retained under the ignored directory
+`.worktrees/qualification-refreshed-rmk/debug/`: `clean-images/` contains the
+installed ELF/UF2 pair and manifest; `clean-*-tests.log`, `clean-*-check*.log`,
+`clean-*-lint.log`, `clean-layout.log`, `clean-disassembly.txt`, and
+`clean-stack.log` hold build evidence. Flash logs are `left-clean-flash.log`
+and `right-clean-flash.log`; runtime/watch logs include `clean-paired-status.log`,
+`clean-apply.log`, `clean-after-diff.log`, `clean-usb-watch.log`,
+`post-reboot-checks.log`, `post-reboot-show.toml`, and `reboot-usb-watch.log`.
+Final readbacks use the `final-*` prefix. `inspect_stack.py` states its static
+analysis limitations. Failed diagnostic trials are retained in
+`diagnostic-images/`, `diagnostic-cause-images/`, `runner-images/`, and
+`trap-images/`; `replica-images/` is the successful diagnostic repair pair.
+Their manifests identify every image actually flashed. `low-inline-images/`,
+`sync-images/`, and `outline-images/` were built but not flashed. No diagnostic
+source changes were propagated to the outer pin.
+
+---
+
+## Historical result after host repair
 
 **Host tooling repaired; paired firmware failed hardware qualification. Both
 original application images are restored, and live runtime configuration
