@@ -20,9 +20,20 @@ boards retain their previous table capacities and protocol/storage layouts.
 Full-capacity host tests cover atomic conditional-table replacement, advanced
 layer/lock predicates, brightness, output controls, and 20-second Magic linger.
 
+A second offline investigation reproduced a separate configuration-read race.
+Two real Rynk sessions requesting different persisted layer names received each
+other's replies; cancelling a queued reader made the next session consume its
+stale reply. USB and BLE sessions share the service and can run concurrently.
+Each storage read response now serializes its callers and drains an outstanding
+reply after cancellation before queuing another request. This applies to layer
+metadata, BLE names, bonds, peer addresses, connection type and active profile.
+It preserves all request messages, wire formats and storage records. The same
+session/storage scenarios now return the correct names. This race is proven,
+but does not explain the historical USB reset by itself.
+
 The candidate carries all 36 previous RMK assembly pins plus
-`fix/cooperative-storage`. Its generated tree is
-`6af1700c3fb2dd2b32b02cd7bf6a4396c78a58eb`, reproduced by a locked build.
+`fix/cooperative-storage` and `fix/storage-read-replies`. Its generated tree is
+`66381c90e1ce6a0adfd5c5298abcbaeb44d227e2`, reproduced by a locked build.
 The assembled candidate is published to `candidate/magic-runtime-crash`;
 the assembly and product sources use `fix/magic-runtime-crash`. No default
 published installation branch was moved.
@@ -35,12 +46,13 @@ Any later hardware qualification must account for the saved runtime backup.
 ## Final candidate inputs and artifacts
 
 Both bundles were built with Rust 1.97.0 from clean product revision
-`ee4901be2fa58f69c60b8a69435de50ded39d8fe` and clean configuration revision
-`85b856bb819567e5802e11cdb6dc84e373b135fd`. The latter is the source/config
+`ca18b2a9b164fb6aca7c745eff1531898a59c0c5` and clean configuration revision
+`8393967bff84eb8bb74f5307f5d0e12f5d555ac2`. The latter is the source/config
 commit immediately before this results-only documentation update. The product
-pins RMK `c4c2286dc54db639708c22a71b5379a2620ae8d5` and assembly
-`0447f28ee8e7cb9750f3bc4d1f2326bdc4da775c`; the standalone storage topic is
-`3abef32c5bfab2a07df8850a71971944c7f31a97`.
+pins RMK `18eb611ef3e5fc1b13e06367251c9d16c9467d66` and assembly
+`e73f9cb3f2769d4e3b27844a4b6f1fa3a8d8e007`; the standalone storage topic is
+`3abef32c5bfab2a07df8850a71971944c7f31a97`. The read-response topic is
+`5e3eaeb9fbcf` (full pin in the assembly lock).
 
 Bundles, manifests, SHA256SUMS and DO-NOT-FLASH markers are in
 `.handoff/candidate/glove80/` and `.handoff/candidate/go60/`. Each contains both
@@ -50,13 +62,13 @@ configuration. Application addresses start at `0x26000`; ends below are exclusiv
 
 | Image | Candidate end | Prior failing candidate end | Change | Family |
 | --- | --- | --- | --- | --- |
-| Glove80 left | `0xd7b00` | `0xd7d00` | -512 bytes | `0x9807b007` |
-| Glove80 right | `0x8b100` | `0x8b300` | -512 bytes | `0x9808b007` |
+| Glove80 left | `0xd8200` | `0xd7d00` | +1,280 bytes | `0x9807b007` |
+| Glove80 right | `0x8b300` | `0x8b300` | 0 bytes | `0x9808b007` |
 | Go60 left | `0xd6d00` | `0xd6e00` | -256 bytes | `0x9809b007` |
-| Go60 right | `0x8a100` | `0x8a200` | -256 bytes | `0x980ab007` |
+| Go60 right | `0x8a300` | `0x8a200` | +256 bytes | `0x980ab007` |
 
 The saved recovery Glove80 ranges end at `0xd5800`/`0x89f00`. This candidate
-therefore uses 8,960/4,608 more flash bytes than that older recovery firmware,
+therefore uses 10,752/5,120 more flash bytes than that older recovery firmware,
 while fitting the existing `0xdc000` application boundary. Recovery UF2s were
 reconstructed offline from the supplied ELFs into `.handoff/candidate/recovery/`;
 their hashes exactly match the original recovery manifest. The supplied
@@ -70,20 +82,48 @@ worst-case stack bounds and do not establish the historical reset's cause.
 
 | Glove80 central measurement | Failing candidate | Fixed candidate |
 | --- | ---: | ---: |
-| Main poll local frame | 19,788 | 19,788 |
+| Main poll local frame | 19,788 | 19,796 |
 | `central_lighting::init` local frame | 36,580 | 396 |
 | Lighting command local frame | 41,652 | 27,716 |
-| Main task static pool | 117,384 | 99,320 |
+| Main task static pool | 117,384 | 100,000 |
 | Separate static engine | 0 | 18,120 |
-| Available linker stack region | 96,336 | 96,280 |
+| Available linker stack region | 96,336 | 95,472 |
 
 The engine wrapper's constructor frame is 18,128 bytes and its separate
 `make_engine` frame is 22,452 bytes. Moving the engine eliminates large
 by-value transfers; it does not eliminate all constructor temporaries.
-Total static RAM increases by 56 bytes. Final Go60 linker stack regions are
-95,184 bytes central and 161,264 peripheral; its central lighting-command
+Total static RAM increases by 864 bytes relative to the failing candidate
+(including response serialization). Final Go60 linker stack regions are
+94,376 bytes central and 161,176 peripheral; its central lighting-command
 frame is 25,388 bytes. Disassemblies, symbol sizes and prologue reports for
 all four final ELFs are under `.handoff/candidate/analysis/`.
+
+## Execution of the shipping ARM instructions
+
+Unicorn 2.1.4 executes each final ELF's actual lighting constructor and command
+handler. DWARF supplies its optimized Rust layouts; the test loads the ELF's
+ROM/RAM segments, initializes the static engine, stages the full 100/80-cell
+advanced conditional table, verifies atomic visibility and exact paged readback,
+then exports/applies a replica and verifies all cells again. All four images pass.
+
+The emulator records the minimum stack pointer at every executed instruction,
+including nested callees and saved registers. These are measured paths, not
+whole-firmware upper bounds:
+
+| Image | Constructor peak | Largest exercised command peak | Linker stack region |
+| --- | ---: | ---: | ---: |
+| Glove80 left | 45,388 | 32,500 | 95,472 |
+| Glove80 right | 43,972 | 35,572 | 165,136 |
+| Go60 left | 39,972 | 29,452 | 94,376 |
+| Go60 right | 38,660 | 32,460 | 161,176 |
+
+The harness calls these functions directly: the calling async task frames and
+interrupt stack use are excluded. It models SCB thread mode for the mutex;
+it does not model hardware transports, flash timing, interrupts or watchdog
+expiry. Instruction counts are not CPU-cycle timing. No device was accessed.
+Scripts/logs are under `.handoff/stress/`; reports and ELFs are under
+`.handoff/candidate/`. The superseded first offline candidate is preserved in
+`.handoff/candidate-v1/`.
 
 ## Verification and limits
 
@@ -92,7 +132,16 @@ all four final ELFs are under `.handoff/candidate/analysis/`.
   same NOR-flash bytes. The original code fails at 339,243 ready reads per
   poll; the fix stays at 32. The assembled replay also passes with the actual
   Glove80 compile-time TOML, with 17 erases and exact serialized action readback.
-- The 132 selected RMK lighting/storage/Control-GUI tests pass across generic
+- All 19 focused storage tests pass on the final source with the actual
+  Glove80 compile-time TOML. These include four response concurrency/cancellation
+  cases, two metadata-helper integration cases, the bulk-write replay and storage
+  migrations. The standalone read-response topic passes strict Clippy and ARM
+  no-std compilation; the assembled non-BLE Rynk/lighting/storage build passes.
+  An independent audit confirmed cancellation safety at every await boundary.
+- Real public Rynk session + NOR storage tests reproduce crossed and stale
+  replies before the fix, and correct distinct names afterwards. Evidence is in
+  `.handoff/candidate/reply-signal-audit/` and `.handoff/stress/reply-*-fixed.log`.
+- The earlier 132 selected RMK lighting/storage/Control-GUI tests pass across generic
   and board settings. One pre-existing scene test assumes profile index 3:
   generic three-profile settings reject it, while the board's four-profile
   settings pass. The storage replay also passed under both settings.
@@ -115,9 +164,14 @@ all four final ELFs are under `.handoff/candidate/analysis/`.
   by this fix. The native client, WASM client and embedded firmware builds pass.
 
 Logs and offline replay/build/inspection helpers are retained in
-`.handoff/candidate/`. No full RMK suite or known-hanging Rynk loopback test was
-run. The scheduling defect is reproduced and fixed; hardware watchdog timing,
-real stack high-water marks, and the original reset mechanism remain unproven.
+`.handoff/candidate/` and `.handoff/stress/`. The final source reran the 117
+protocol tests, 39 native client tests and doctest, product host/WASM checks,
+formatting, assembled Clippy, both firmware builds and all four ARM emulations.
+No full RMK suite or known-hanging Rynk loopback test was run. The scheduling and read-response defects are reproduced and fixed; hardware
+watchdog timing, whole-firmware stack high-water marks, and the original reset
+mechanism remain unproven. The separate pre-existing shared write-completion
+signal can acknowledge an unrelated queued write; this investigation did not
+change that API or establish it as a reset cause.
 
 Future hardware qualification requires separately authorized test hardware:
 qualify the central with the saved recovery available, repeat runtime applies
