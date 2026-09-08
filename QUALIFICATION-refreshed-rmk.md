@@ -1,6 +1,137 @@
 # Refreshed RMK qualification — jay-lenovo, 2026-09-08
 
-## Current repair: reduced stack use and durable lighting restoration
+## Current repair: Go60 flash overflow resolved
+
+Both Go60 halves now build with the original application partition and feature
+set. The shared change is also installed on both halves of the attached
+Glove80. This is an additional repair on the refreshed upstream line, not a
+rollback. The previous Glove80 stack and persistence qualification below is
+retained as history; the versions in this section are current.
+
+### Why the image stopped fitting
+
+A Go60 does not need to be connected to establish a linker overflow. The board
+build specifies the application region `0x26000..0xdc000`; the linker places
+code and initialization data against that limit on the host. This proves a
+build does not fit that configured partition, not anything about an attached
+keyboard's behavior or runtime RAM use.
+
+I rebuilt pre-refresh product `60ef93ae698039fc3d902f0af46d7bb99c1222ea`
+with RMK `0db0f360110aa2b65242a0bb78147635e000d298`, Rust 1.97.0, and the
+outer Go60 firmware TOML. Both halves built. The old central ELF ended at
+`0xdbd60`: only **672 bytes** remained. The refreshed product `401ea855`
+added 14,100 bytes across text, read-only data, and initialized data, about
+1.9% of the application budget. Its linker reported `.data` overflowing by
+13,420 bytes and the final aligned section by 13,440 bytes.
+
+| Central ELF section | Before refresh | Refreshed before this fix | Fixed candidate |
+| --- | ---: | ---: | ---: |
+| `.text` | 647,300 | 658,628 | 658,764 |
+| `.rodata` | 72,224 | 73,604 | 73,660 |
+| `.data` (also occupies flash) | 25,004 | 26,396 | 9,652 |
+| `.bss` | 134,032 | 138,184 | 154,960 |
+| `.uninit` | 1,024 | 1,024 | 1,024 |
+
+The lockfiles show **Trouble 0.7.0 → 0.8.0**, not 0.24. The 0.24 dependency
+is `darling`, a host proc-macro dependency. `p256-cortex-m4` was added, but
+it replaces existing P-256 arithmetic; its presence alone does not establish
+that it caused the overflow. Refresh changes also enlarged lighting state,
+serialization and async paths. The measured section growth is established;
+a commit-by-commit attribution of all 14,100 bytes is not.
+
+The actionable waste was three empty lighting handoff buffers: Rynk mailbox
+3,008 bytes, core mailbox 6,680 bytes, and replica slot 7,048 bytes. Rust's
+representation of their empty enum values caused these entire static objects
+to have flash initialization images. A fixed-capacity `heapless::Vec<T, 1>`
+now represents the optional payload, leaving the empty objects zero-initialized
+in BSS. Signal delivery, cancellation and busy/empty semantics are retained.
+No allocation, unsafe initialization, partition enlargement, compiler-flag
+change, feature removal or security downgrade was introduced.
+
+The final ELF confirms all three objects are in BSS. `.data` shrank by 16,744
+bytes; combined static RAM increased by only **32 bytes**. The central ELF
+ends at `0xdb3e0`, leaving **3,104 bytes**. The rounded UF2 leaves **3,072
+bytes**. This resolves the build blocker but leaves a small flash margin;
+the PR workflow now runs `just firmware-all` to catch subsequent overflows.
+
+### Published sources and current hardware
+
+| Component | Commit |
+| --- | --- |
+| Owning lighting topic | `94684603bf9329800a49e62aabba99668db310dd` |
+| Tested and published RMK assembled | `dd592a3d275428b58a9a0bc90dc85c046f881161` |
+| Assembly recipe | `86d07e9284050b5cfd04b4dc3922d09064bb6dbd` |
+| Product used for hardware qualification | `050a2cacb11f6f268fb58b1c6b8aab90a7c1da78` |
+| Published product | `560b2759b405b7d03304af0c90b6643c95ce6cb9` |
+| Outer product-pin commit | `daa13e8` |
+
+The public-URL assembly and locked rebuild reproduced tree
+`e03778ad017e56833010f3a01e39a91be108c53a`. The published product differs
+from the hardware-tested product only in the assembly-recipe gitlink.
+The tested bundles used outer provenance `70fb3782-dirty`, Rust 1.97.0,
+and each board's explicit outer firmware TOML. All UF2 blocks, family IDs,
+application bounds and manifest hashes were verified.
+
+```text
+Installed Glove80:
+left  0x26000..0xd5200  family 0x9807b007
+      01627a8b3e8ad7cc3ff3c2b35e349afbe517441effb11a9cad6ec48210cdcc2a
+right 0x26000..0x86800  family 0x9808b007
+      54e7a1234cfde3b46330cc30eabc167c199372acb67915527e1309cfc48890fc
+
+Build-qualified Go60 (not flashed):
+left  0x26000..0xdb400  family 0x9809b007
+      a4a098bce1ba39b46b0e6795ce89f0e6821d376f1ff293c906b61feb962ced02
+right 0x26000..0x8af00  family 0x980ab007
+      38ee4ab04080469ad7953dbca8585b176a5ce10275ffe522382acfc1d5be1bf1
+```
+
+Before flashing, the Glove80 reported product `8226c521` / RMK `94fba2e5`,
+matched the source configuration, and had healthy split replication. That
+qualified recovery pair remains in `persistence/qualified-images/`. The new
+central was flashed first and passed its 45-second USB watch without recovery;
+the matching right was then flashed. Central reports `config 70fb3782-dirty /
+glove80-rmk v0.1.0 (050a2cac) / RMK dd592a3d`. The right's copied UF2 and
+healthy telemetry establish its participation; its identity was not read
+separately.
+
+`just apply`, independent `just diff`, and `just show` restored and verified
+the full source configuration after the flash reset. Three software reboots
+changed USB numbers 109→110→111→112. After each reboot, configuration matched
+without reapplying it, and split replication was `IN SYNC` / `Healthy` with
+zero mismatches. These readbacks exercise both changed mailboxes and replica
+handoff, including durable lighting scenes and conditional rules.
+A following five-minute USB watch recorded 600 samples at 0.5-second intervals
+with device number 112 throughout and no absence or number changes.
+
+### Verification and limits
+
+126 relevant RMK lighting/storage tests passed, including an added regression
+for owned reply replacement and drop behavior. All 16 split-lighting tests,
+product parity checks, 39 native Rynk tests, its doctest, no-default-features
+and WASM checks passed. Changed RMK files pass rustfmt and relevant clippy
+with the previously documented `new_without_default` exception. Both runtime
+configurations and compiled configuration parity pass `just check`.
+The same two pre-existing protocol snapshots fail; 89 other protocol tests
+pass. This change does not alter the protocol. Workflow actionlint passed.
+The outer `just firmware-all` also passed on published product `560b2759`,
+including both compiled-configuration checks, all four firmware halves and
+the Go60 stock-reference/platform-profile validation. A second build produced
+byte-identical UF2s for all four halves with unchanged manifests (outer
+provenance `aa0a446d-dirty`). These final-product images have the same address
+ranges as the installed candidate; their hashes differ because product and
+outer provenance changed. ARM no-default-features and the actual Rynk WASM
+build also passed. See `reproducibility-result.log` for all four hashes.
+
+No Go60 is attached, so its build success is not hardware qualification.
+The physical pointing, battery/VBUS, unplug/replug and transport-switching
+coverage limits recorded below remain. Local evidence for this repair is
+under `.worktrees/qualification-refreshed-rmk/go60-size/`, including old/new
+ELFs, `current.map`, `final-layout.log`, both board bundles, assembly logs,
+firmware logs, tests, flash logs, runtime exports and reboot logs.
+
+
+## Previous qualification: reduced stack use and durable lighting restoration
 
 The refreshed upstream line is retained. The changes repair the paired reset
 loop and the lighting restoration defects found while qualifying it. The
@@ -151,10 +282,9 @@ and timeout behavior and wired serial deadlines are unreachable here.
 Software reboots and split convergence do not substitute for those tests.
 
 The repair is proposed in [PR #16](https://github.com/colonelpanic8/moergo-config/pull/16).
-The outer PR can validate the Glove80 repair, but master publication currently
-runs `firmware-all`: the unrelated, pre-existing Go60 overflow still blocks
-that release job. Do not interpret a green PR configuration check as a green
-release build for both products.
+At this earlier qualification point, Go60 overflow still blocked the master
+`firmware-all` release job. The current repair above resolves that blocker
+and adds both firmware builds to PR validation.
 
 New evidence is retained locally under
 `.worktrees/qualification-refreshed-rmk/persistence/`: `qualified-*` logs,
