@@ -106,6 +106,53 @@ the order written, so a broad selector followed by a specific correction reads
 the way the compositor below already reads. Conditional rules stay ordered in
 both forms, with the layer-attached ones after the standalone table.
 
+## Layer conditions
+
+Runtime conditional scenes can require several layers together:
+
+```toml
+[[lighting.conditional_scene]]
+key = [0, 1]
+color = "#ff00ff"
+layers = { active = [2, 4], inactive = [3] }
+```
+
+This matches while layers 2 and 4 are active and layer 3 is inactive, regardless
+of which layer is highest. Other layers are unrestricted. To require an exact
+set, list every other relevant layer in `inactive`. Either list can be omitted.
+Layer indices are zero-based and must be in 0–31; list order and duplicates do
+not matter. A layer cannot be required both active and inactive.
+
+Layer-attached rules add these conditions to their containing layer's implicit
+active condition:
+
+```toml
+[[layer.key]]
+key = [0, 1]
+color = "#0000ff"
+
+[[layer.key.rule]]
+color = "#ff00ff"
+when = { layers = { active = [4], inactive = [3] } }
+```
+
+Place this under the desired `[[layer]]`. It shows magenta when that layer and
+layer 4 are active and layer 3 is inactive; otherwise its scene color is blue.
+The same `when.layers` form works for `[[layer.light.rule]]`.
+
+The existing single-layer form, `layer = { layer = 4, active = true }`, remains
+valid for standalone conditional scenes. When combined with `layers`, all
+conditions must hold. Separate standalone rules can express alternatives;
+later matching rules win if they target the same LED.
+
+`./bin/moergo-control` uses the existing advanced conditional-scene endpoints
+when the keyboard advertises `RUNTIME_LAYER_INDICATOR_CONDITIONS`. Older
+firmware remains supported for existing rules, but applying a layer-set rule
+fails before configuration writes when that capability is absent. These are
+runtime settings: use `just diff` followed by `just apply` and its read-back
+verification. The browser's legacy snapshot conversion does not yet support
+layer-set conditions and rejects them instead of dropping them.
+
 ## Composition and output
 
 The renderer composes sources from lower to higher priority:
