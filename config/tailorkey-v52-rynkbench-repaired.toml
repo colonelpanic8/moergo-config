@@ -387,7 +387,7 @@ mode = "permissive-hold"
 
 [lighting]
 brightness = 255
-output_mode = "powered-only"
+output_mode = "always-on"
 wake_layers = [ 11 ]
 scene_policy = "active-stack"
 

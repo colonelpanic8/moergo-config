@@ -147,23 +147,34 @@ it. Every later apply, including the lighting-only one that reproduces the
 same write mix, completed normally. Do not run two `moergo-control`
 processes against the keyboard at once, `validate` included.
 
-## 6. Open items
+## 6. Follow-up, later on 2026-09-14
 
-- **Right half** still runs the pre-partition firmware. Its bootloader
-  volume needs the cable; flash `dist/glove80-rmk-0.1.0-rh.uf2` with
-  `bin/glove80-safe-flash … --peripheral` when it is plugged in.
-- **`assembled` on the fork** still points at `dd592a3d2`. The new build is
-  `assembled-persist-stalls` (`01178c2f`), which moergo-rmk pins.
-- **Moosy** (`moosyresearch` on Discord) is owed a correction: the config
-  channel does not die and does not need a replug, the apply was stalling on
-  flash page migrations and the old host gave up part-way, and their
-  keyboard is running a half-applied config until they re-apply
-  `config/tailorkey-v52-rynkbench-repaired.toml` with a CLI at least
-  moergo-rmk `f429fc2` (and ideally this firmware). The white-colour
-  question is still open.
-- **Mouse layer scaling** for TailorKey's three mouse layers needs
-  `[[behavior.mouse_layer_scale]]` entries and `mouse_layer_scale_max_num =
-  3` in the firmware TOML, which the stock-parity check forbids; the user
-  has not decided.
-- Three drifted `KC_F13` cells on the 8-sector firmware (section 1) were
-  never explained.
+- **Right half** flashed with `dist/glove80-rmk-0.1.0-rh.uf2` (`b3f7b5f1…`)
+  through `bin/glove80-safe-flash --peripheral`; the cable turned out to be
+  attached. It reconnected (`lighting read`: right half connected) and
+  `config diff` still matched `config/glove80.toml`. Both halves now run
+  moergo-rmk `31ba39cf` / RMK `01178c2f`, released as v2026.09.14.2.
+- **`assembled` on the fork** now points at `01178c2f`; the previous
+  `dd592a3d2` is kept as tag `assembled-dd592a3d2`.
+- **Rynkbench** was the piece Moosy actually uses, and it had the same
+  failure as the old CLI: an import wrote each changed cell under a 5 s
+  request watchdog that closes the link on timeout, so on the 8-sector store
+  every import died at the first page migration with the lighting section
+  never written. Rynkbench `346053b` (deployed to GitHub Pages) is re-pinned
+  to moergo-rmk `31ba39c` / RMK `01178c2f`, pages whole-keymap writes at
+  four cells, resends keymap writes the firmware answers `Busy`, and gives
+  flash-bound requests a 120 s budget so older firmware slows an import
+  instead of dropping it. Its `nix/rynk-wasm-Cargo.lock` keeps the
+  wasm-bindgen family at 0.2.126 because the pinned nixpkgs ships no 0.2.128
+  CLI.
+- **Moosy**: `config/tailorkey-v52-rynkbench-repaired.toml` has
+  `output_mode` back at his original `always-on` (the LED-power theory was
+  wrong) and validates against the fixed firmware. The uniform warm-white
+  board in his photo is most likely the compiled default lighting (Crosshair
+  on the Amber palette), since no import ever reached its lighting phase;
+  whether his pale Cursor-layer palette reads as white on the LEDs is still
+  untested. He needs to flash v2026.09.14.2 on both halves (first boot wipes
+  the store), hard-refresh the editor, and load the file again.
+- Still open: mouse layer scaling for TailorKey's three mouse layers (the
+  stock-parity decision) and the three unexplained `KC_F13` cells from
+  section 1.
