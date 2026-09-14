@@ -58,6 +58,43 @@ Comments and unrelated values survive generation, but treat variants as
 build products: regenerate them after editing the canonical file instead
 of editing them directly.
 
+## Persistence: what `config apply` waits for
+
+Every keymap cell, name, morse, combo, and lighting cell written over Rynk
+becomes a new item in the firmware's flash store (RMK on top of
+`sequential-storage`). The firmware queues each write on a channel four
+entries deep and blocks the whole Rynk session once that channel is full, so a
+long write only answers after most of it has reached flash. When the store's
+current page fills, the next write closes it and migrates the previous page's
+live items through radio-scheduled flash timeslots, which silences the
+keyboard for tens of seconds. On a nearly full store that happens every few
+dozen writes.
+
+`config apply` is built around that:
+
+- Only cells that differ from what the keyboard holds are written, in pages of
+  four (`MOERGO_PERSIST_BATCH` overrides; `MOERGO_WRITE_WHOLE_LAYERS=1`
+  restores the old rewrite-every-cell behaviour).
+- After every page it waits for the flash queue to drain with a layer
+  metadata read, which the firmware serves behind everything queued before
+  it. Waits of two seconds or more are printed as they happen, and a summary
+  of cells written and time spent waiting follows the layer writes.
+- The USB transport tolerates five minutes of silence before declaring the
+  link dead (`MOERGO_RYNK_READ_TIMEOUT_SECS`). Retrying sooner does not help:
+  a keyboard mid-migration is not reading requests, so a fresh session's first
+  write fails on the kernel's own interrupt timeout.
+
+`./bin/moergo-control keymap persist-probe [--rounds N] [--writes]` measures
+the queue drain time and, with `--writes`, one real item's persist time. A
+single item taking seconds means the settings partition is nearly full.
+
+The store fills fast because every rebuild re-stores all sixteen compiled
+layers before any user data (about 22 KiB of items). Eight 4 KiB sectors left
+it over 90 % full; the boards now use twenty-four sectors at `0xdc000`
+(`crates/*/keyboard.toml`, `[storage]`). Flashing a build with the larger
+partition wipes the store, as every rebuild already does, so apply the runtime
+config afterwards.
+
 ## `alpha` — alternate alpha layouts from a QWERTY source
 
 ```sh
