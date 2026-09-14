@@ -1183,3 +1183,13 @@ battery = { node = 1, min_level = 81, charge = "charging" }
 
 # The output-mode, effects, connection-slot, and USB-key indicators live
 # beside their [[layer.bind]] entries in the Magic layer section above.
+
+# Caps Lock state, reported by the host over HID. Caps Lock lives on Lower
+# (key [3, 0]), so without this there is nothing on the board that shows the
+# lock is on — which is exactly how it stays stuck unnoticed. The rule names
+# no layer, so the indicator is visible while typing, not just while Lower is
+# held. It paints the key that toggles it: red on the base-layer Ctrl key.
+[[lighting.conditional_scene]]
+key = [3, 0]
+color = "#ff2000"
+indicators = { caps_lock = true }

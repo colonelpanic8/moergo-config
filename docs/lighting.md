@@ -145,10 +145,38 @@ valid for standalone conditional scenes. When combined with `layers`, all
 conditions must hold. Separate standalone rules can express alternatives;
 later matching rules win if they target the same LED.
 
+## Host lock-indicator conditions
+
+The host, not the keyboard, owns Caps/Num/Scroll Lock, and pushes that state
+back over HID. `indicators` gates a rule on it:
+
+```toml
+[[lighting.conditional_scene]]
+key = [3, 0]
+color = "#ff2000"
+indicators = { caps_lock = true }
+```
+
+Every named indicator must hold; omitting one leaves it unrestricted, so a
+table naming none would match everything and is rejected instead. The
+available names are `num_lock`, `caps_lock`, and `scroll_lock`. The same
+`when = { indicators = ... }` form works for layer-attached rules, which add it
+to their containing layer's implicit active condition.
+
+Both boards bind Caps Lock on Lower rather than to a dedicated key, so a stuck
+lock is otherwise invisible while typing. The rules in `config/glove80.toml`
+and `config/go60.toml` name no layer, so the indicator shows on every layer,
+and paint the key that toggles it — the base-layer Ctrl position.
+
+Because the host owns the state, nothing lights until a host has reported it.
+A board that has never been told is indistinguishable from one told the lock is
+off, which is the correct reading of an unlit indicator.
+
 `./bin/moergo-control` uses the existing advanced conditional-scene endpoints
 when the keyboard advertises `RUNTIME_LAYER_INDICATOR_CONDITIONS`. Older
-firmware remains supported for existing rules, but applying a layer-set rule
-fails before configuration writes when that capability is absent. These are
+firmware remains supported for existing rules, but applying a layer-set or
+lock-indicator rule fails before configuration writes when that capability is
+absent. These are
 runtime settings: use `just diff` followed by `just apply` and its read-back
 verification. Rynkbench preserves layer-set conditions through TOML import and
 export and checks firmware support and lighting-table capacity before any

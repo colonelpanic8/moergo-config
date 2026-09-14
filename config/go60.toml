@@ -341,6 +341,13 @@ conditional_scene = [
   { led = 11, color = "#b00000", layer = { layer = 2, active = true }, connection = { usb_connected = false } },
   { led = 11, color = "#0050ff", layer = { layer = 2, active = true }, connection = { usb_connected = true } },
   { led = 11, color = "#00c020", layer = { layer = 2, active = true }, connection = { transport = "usb" } },
+
+  # Caps Lock state, reported by the host over HID. Caps Lock lives on Lower
+  # (key [2, 0]), so without this there is nothing on the board that shows the
+  # lock is on — which is exactly how it stays stuck unnoticed. The rule names
+  # no layer, so the indicator is visible while typing, not just while Lower is
+  # held. It paints the key that toggles it: red on the base-layer Ctrl key.
+  { key = [2, 0], color = "#ff2000", indicators = { caps_lock = true } },
 ]
 
 [lighting.background]
