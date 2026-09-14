@@ -62,13 +62,16 @@ of editing them directly.
 
 Every keymap cell, name, morse, combo, and lighting cell written over Rynk
 becomes a new item in the firmware's flash store (RMK on top of
-`sequential-storage`). The firmware queues each write on a channel four
-entries deep and blocks the whole Rynk session once that channel is full, so a
-long write only answers after most of it has reached flash. When the store's
-current page fills, the next write closes it and migrates the previous page's
-live items through radio-scheduled flash timeslots, which silences the
-keyboard for tens of seconds. On a nearly full store that happens every few
-dozen writes.
+`sequential-storage`). The firmware queues each write on a bounded channel
+(sixteen entries on these boards, `flash_channel_size`) and only accepts a
+keymap page it can queue whole: it waits up to half a second for room and
+otherwise answers `Busy` with nothing applied, so the Rynk session keeps
+answering. A page longer than the channel streams through it instead and
+blocks the session until it fits, which is why hosts keep pages short. When
+the store's current page fills, the next write closes it and migrates the
+previous page's live items through radio-scheduled flash timeslots, which
+holds the queue for tens of seconds. On a nearly full store that happens
+every few dozen writes.
 
 `config apply` is built around that:
 
@@ -79,6 +82,8 @@ dozen writes.
   metadata read, which the firmware serves behind everything queued before
   it. Waits of two seconds or more are printed as they happen, and a summary
   of cells written and time spent waiting follows the layer writes.
+- A page the firmware answers `Busy` is sent again after 100 ms, for up to
+  five minutes; the summary counts those retries.
 - The USB transport tolerates five minutes of silence before declaring the
   link dead (`MOERGO_RYNK_READ_TIMEOUT_SECS`). Retrying sooner does not help:
   a keyboard mid-migration is not reading requests, so a fresh session's first
@@ -88,12 +93,14 @@ dozen writes.
 the queue drain time and, with `--writes`, one real item's persist time. A
 single item taking seconds means the settings partition is nearly full.
 
-The store fills fast because every rebuild re-stores all sixteen compiled
-layers before any user data (about 22 KiB of items). Eight 4 KiB sectors left
-it over 90 % full; the boards now use twenty-four sectors at `0xdc000`
-(`crates/*/keyboard.toml`, `[storage]`). Flashing a build with the larger
-partition wipes the store, as every rebuild already does, so apply the runtime
-config afterwards.
+The store used to fill fast because every rebuild re-stored all sixteen
+compiled layers before any user data (about 22 KiB of items); eight 4 KiB
+sectors left it over 90 % full. A fresh store now seeds only its config
+records, since boot overlays stored cells on the compiled keymap anyway, and
+the boards use twenty-four sectors at `0xdc000` (`crates/*/keyboard.toml`,
+`[storage]`). Flashing a build with a different partition wipes the store, as
+every rebuild already does, so apply the runtime config afterwards. See
+`QUALIFICATION-persist-stalls.md` for the measurements behind all of this.
 
 ## `alpha` — alternate alpha layouts from a QWERTY source
 

@@ -7,8 +7,8 @@
 # - eight per-finger HRM helper layers become four named profiles using
 #   `opposite_hand_hold`, resolved from the firmware's L/R/* geometry tags;
 # - 58 duplicated Morse records become named profiles plus typed MT/LT/TH keys;
-# - the remaining 12 user-visible layers, 20 combo slots and six true macros
-#   retain the source layout's actions.
+# - the remaining 12 user-visible layers and six true macros retain the
+#   source layout's actions; 20 combo slots preserve physical trigger positions.
 #
 # The file itself is runtime state and is applied through moergo-control. The
 # three transparent MouseSlow/MouseFast/MouseWarp layers require these compiled
@@ -191,181 +191,121 @@ QK_RBT -- -- -- -- -- USER(1) -- -- -- -- -- -- QK_RBT
 
 [[combo]]
 name = "F11 (base)"
-keys = [
-    "KC_F9",
-    "KC_0",
-]
+positions = [[0, 12], [1, 12]]
 output = "KC_F11"
 layer = 0
 
 [[combo]]
 name = "F11 (AutoShift)"
-keys = [
-    "KC_TRNS",
-    "TH(KC_0, LSFT(KC_0), autoshift)",
-]
+positions = [[0, 12], [1, 12]]
 output = "KC_F11"
 layer = 2
 
 [[combo]]
 name = "F12 (base)"
-keys = [
-    "KC_F10",
-    "KC_MINS",
-]
+positions = [[0, 13], [1, 13]]
 output = "KC_F12"
 layer = 0
 
 [[combo]]
 name = "F12 (AutoShift)"
-keys = [
-    "KC_TRNS",
-    "TH(KC_MINS, LSFT(KC_MINS), autoshift)",
-]
+positions = [[0, 13], [1, 13]]
 output = "KC_F12"
 layer = 2
 
 [[combo]]
 name = "Alt-Tab (base)"
-keys = [
-    "LT(4, KC_BSPC, thumb_layer)",
-    "KC_LSFT",
-]
+positions = [[3, 6], [0, 6]]
 output = "LMT(4, MOD_LALT, KC_TAB)"
 layer = 0
 
 [[combo]]
 name = "Alt-Tab (AutoShift)"
-keys = [
-    "KC_TRNS",
-    "KC_TRNS",
-]
+positions = [[3, 6], [0, 6]]
 output = "LMT(4, MOD_LALT, KC_TAB)"
 layer = 2
 
 [[combo]]
 name = "Ctrl-Tab (base)"
-keys = [
-    "KC_LCTL",
-    "KC_DEL",
-]
+positions = [[1, 6], [4, 6]]
 output = "LMT(4, MOD_LCTL, KC_TAB)"
 layer = 0
 
 [[combo]]
 name = "Ctrl-Tab (AutoShift)"
-keys = [
-    "KC_TRNS",
-    "KC_TRNS",
-]
+positions = [[1, 6], [4, 6]]
 output = "LMT(4, MOD_LCTL, KC_TAB)"
 layer = 2
 
 [[combo]]
 name = "Toggle gaming (base)"
-keys = [
-    "KC_B",
-    "KC_RGHT",
-]
+positions = [[4, 5], [5, 4]]
 output = "TG(3)"
 layer = 0
 
 [[combo]]
 name = "Toggle gaming (gaming)"
-keys = [
-    "KC_F",
-    "KC_C",
-]
+positions = [[4, 5], [5, 4]]
 output = "TG(3)"
 layer = 3
 
 [[combo]]
 name = "Caps Lock (right, base)"
-keys = [
-    "KC_RCTL",
-    "KC_RALT",
-]
+positions = [[1, 7], [5, 7]]
 output = "KC_CAPS"
 layer = 0
 
 [[combo]]
 name = "Caps Lock (right, AutoShift)"
-keys = [
-    "KC_TRNS",
-    "KC_TRNS",
-]
+positions = [[1, 7], [5, 7]]
 output = "KC_CAPS"
 layer = 2
 
 [[combo]]
 name = "Caps Lock (left, base)"
-keys = [
-    "KC_LALT",
-    "KC_LCTL",
-]
+positions = [[5, 6], [1, 6]]
 output = "KC_CAPS"
 layer = 0
 
 [[combo]]
 name = "Caps Lock (left, AutoShift)"
-keys = [
-    "KC_TRNS",
-    "KC_TRNS",
-]
+positions = [[5, 6], [1, 6]]
 output = "KC_CAPS"
 layer = 2
 
 [[combo]]
 name = "Caps Word (left, base)"
-keys = [
-    "KC_DEL",
-    "LT(4, KC_BSPC, thumb_layer)",
-]
+positions = [[4, 6], [3, 6]]
 output = "CW_TOGG"
 layer = 0
 
 [[combo]]
 name = "Caps Word (left, AutoShift)"
-keys = [
-    "KC_TRNS",
-    "KC_TRNS",
-]
+positions = [[4, 6], [3, 6]]
 output = "CW_TOGG"
 layer = 2
 
 [[combo]]
 name = "Caps Word (right, base)"
-keys = [
-    "LT(6, KC_ENT, thumb_layer)",
-    "LT(5, KC_SPC, thumb_space_layer)",
-]
+positions = [[4, 7], [3, 7]]
 output = "CW_TOGG"
 layer = 0
 
 [[combo]]
 name = "Caps Word (right, AutoShift)"
-keys = [
-    "KC_TRNS",
-    "KC_TRNS",
-]
+positions = [[4, 7], [3, 7]]
 output = "CW_TOGG"
 layer = 2
 
 [[combo]]
 name = "GUI-Tab (base)"
-keys = [
-    "KC_LSFT",
-    "KC_LALT",
-]
+positions = [[0, 6], [5, 6]]
 output = "LMT(4, MOD_LGUI, KC_TAB)"
 layer = 0
 
 [[combo]]
 name = "GUI-Tab (AutoShift)"
-keys = [
-    "KC_TRNS",
-    "KC_TRNS",
-]
+positions = [[0, 6], [5, 6]]
 output = "LMT(4, MOD_LGUI, KC_TAB)"
 layer = 2
 
