@@ -102,6 +102,12 @@ the boards use twenty-four sectors at `0xdc000` (`crates/*/keyboard.toml`,
 every rebuild already does, so apply the runtime config afterwards. See
 `QUALIFICATION-persist-stalls.md` for the measurements behind all of this.
 
+`./bin/moergo-control storage wipe [--yes]` is the factory reset: it erases
+every persisted setting on the central (keymap, layer names, combos, morses,
+macros, lighting, Bluetooth pairings) and reboots it on the compiled
+defaults. The halves re-pair on their own; computers and phones must be
+paired again. Follow it with `just apply` to restore the runtime config.
+
 ## `alpha` — alternate alpha layouts from a QWERTY source
 
 ```sh
