@@ -178,3 +178,28 @@ processes against the keyboard at once, `validate` included.
 - Still open: mouse layer scaling for TailorKey's three mouse layers (the
   stock-parity decision) and the three unexplained `KC_F13` cells from
   section 1.
+
+## 7. Moosy's follow-up, later on 2026-09-14
+
+- **The green key** was the firmware's compiled output-mode indicator
+  (`e30a6f2`, 2026-07-30): three compiled conditional scenes lighting LED 31
+  (the A key) whenever layer index 2 is active, green/red/blue for
+  always-on/always-off/powered-only. `config/glove80.toml` had already moved
+  that indicator to runtime rules on T, so the compiled copy only survived by
+  oversight, and on a layout with Autoshift in slot 2 it lit the A key with no
+  way to remove it. Dropped from the stock board file and
+  `config/firmware.toml` (moergo-rmk `9cf4d77`). Go60 never had it.
+- **Factory reset.** Rynk `StorageReset(Full)` was implemented in firmware but
+  exposed nowhere. `moergo-control storage wipe [--yes]` (moergo-rmk
+  `0255975`) and a "Wipe stored settings" action in Rynkbench's Danger zone
+  (rynkbench `8f78869`) send it. The firmware's storage task erases the
+  partition and reboots the keyboard itself; the first attempt sent a host
+  reboot right after the reset, which won the race and left the store intact.
+  With only the reset sent, the erase plus reboot took about fifteen seconds
+  on this Glove80: an applied config showed 197 differences afterwards,
+  `config apply` restored it, and it survived a reboot. `LayoutOnly` still
+  answers `Unimplemented`; a wipe also drops Bluetooth pairings.
+- Both halves flashed from moergo-rmk `114a7fb0` (the CLI commit before its
+  amend to `0255975`; the board crates are identical between the two), left
+  `e115ad7d…`, right `505b4b09…`, same address ranges as before.
+
