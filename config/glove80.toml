@@ -169,6 +169,15 @@ when = { effects = { enabled = false } }
 key = [2, 4]  # R: maintenance lock toggle
 action = "MAINT_LOCK_TOG"
 
+# R shows whether host-side configuration writes are currently permitted.
+[[layer.key.rule]]
+color = "#008000"
+when = { maintenance = "unlocked" }
+
+[[layer.key.rule]]
+color = "#800000"
+when = { maintenance = "locked" }
+
 [[layer.key]]
 key = [2, 5]  # T: cycle lighting always-on / always-off / plugged-in-only
 action = "UG_OMODE"

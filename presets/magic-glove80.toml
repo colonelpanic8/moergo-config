@@ -23,11 +23,23 @@ name = "Magic"
 keys = """
 --       --  --       --        --       --        QK_OUTPUT_USB  --  --  --  --  --  --  --
 --       --  --       --        --       --        --             --  --  --  --  --  --  --
---       --  BL_UP    RGB_TOG   --       UG_OMODE  --             --  --  --  --  --  --  --
+--       --  BL_UP    RGB_TOG   MAINT_LOCK_TOG UG_OMODE  --       --  --  --  --  --  --  --
 QK_BOOT  --  BL_DOWN  --        --       --        USER(0)        --  --  --  --  --  --  USER(12)
 QK_RBT   --  --       RGB_HUI   --       --        USER(1)        --  --  --  --  --  --  QK_RBT
 --       --  --       RGB_RMOD  RGB_MOD  --        USER(2)        --  --  --  --  --  --  --
 """
+
+[[layer.key]]
+key = [2, 4]
+action = "MAINT_LOCK_TOG"
+
+[[layer.key.rule]]
+color = "#008000"
+when = { maintenance = "unlocked" }
+
+[[layer.key.rule]]
+color = "#800000"
+when = { maintenance = "locked" }
 
 [[patch]]
 layer = "default"

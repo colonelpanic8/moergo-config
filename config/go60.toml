@@ -46,6 +46,38 @@ QK_RBT -- -- UG_HUEU -- USER(13) -- -- -- -- -- -- -- QK_RBT
 -- -- -- -- QK_OUTPUT_USB -- -- -- -- -- -- -- -- --
 """
 
+[[layer.key]]
+key = [1, 4]  # R: maintenance lock toggle
+action = "MAINT_LOCK_TOG"
+
+[[layer.key.rule]]
+color = "#008000"
+when = { maintenance = "unlocked" }
+
+[[layer.key.rule]]
+color = "#800000"
+when = { maintenance = "locked" }
+
+[[layer.key]]
+key = [3, 5]  # B: force BLE / return to automatic split transport
+action = "USER(13)"
+
+[[layer.key.rule]]
+color = "#008000"
+when = { split_transport = { force = "auto", link = "wired" } }
+
+[[layer.key.rule]]
+color = "#0040a0"
+when = { split_transport = { force = "auto", link = "ble" } }
+
+[[layer.key.rule]]
+color = "#800000"
+when = { split_transport = { force = "ble" } }
+
+[[layer.key.rule]]
+color = "#a000a0"
+when = { split_transport = { force = "wired" } }
+
 [[layer]]
 id = "layer3"
 name = "Games"
