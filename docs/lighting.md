@@ -172,17 +172,21 @@ Because the host owns the state, nothing lights until a host has reported it.
 A board that has never been told is indistinguishable from one told the lock is
 off, which is the correct reading of an unlit indicator.
 
-`./bin/moergo-control` uses the existing advanced conditional-scene endpoints
-when the keyboard advertises `RUNTIME_LAYER_INDICATOR_CONDITIONS`. Older
-firmware remains supported for existing rules, but applying a layer-set or
-lock-indicator rule fails before configuration writes when that capability is
-absent. These are
-runtime settings: use `just diff` followed by `just apply` and its read-back
-verification. Rynkbench preserves layer-set conditions through TOML import and
-export and checks firmware support and lighting-table capacity before any
-import writes. Both host tools reject contradictory gates on advanced readback.
-Host lock-indicator conditions still cannot be represented in runtime TOML and
-are rejected explicitly during export.
+Both host tools drive these through the self-describing rule endpoints, which
+the boards advertise as `RULES`. Firmware publishes the predicate tags it
+parses, and the host checks the tags a rule actually uses, so layer-set and
+lock-indicator conditions need no separate capability bit. Firmware predating
+`RULES` is still supported through the older conditional-scene endpoints, and
+there a layer-set or lock-indicator rule fails before any configuration write
+unless the board advertises `RUNTIME_LAYER_INDICATOR_CONDITIONS`. The boards in
+this repository build `rmk` without `lighting_legacy_conditional_scenes`, so
+they ship the rule endpoints alone.
+
+These are runtime settings: use `just diff` followed by `just apply` and its
+read-back verification. Rynkbench preserves both layer-set and lock-indicator
+conditions through TOML import and export, and checks firmware support and
+lighting-table capacity before any import writes. Both host tools reject
+contradictory gates on readback.
 
 ## Composition and output
 
