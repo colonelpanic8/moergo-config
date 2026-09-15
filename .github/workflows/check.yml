@@ -56,10 +56,14 @@ jobs:
           name: moergo-config-firmware
           path: dist
       # The Go60 bundle's manifest.json and SHA256SUMS would collide with the
-      # Glove80 bundle's as flat release assets, so it ships as one archive.
+      # Glove80 bundle's as flat release assets. Keep the archive for humans,
+      # and also publish its uniquely named UF2 files so device-aware clients
+      # can install them directly from the latest release.
       - name: Archive Go60 bundle
         run: |
           (cd dist/go60 && zip -r ../../go60-rmk.zip .)
+          cp dist/go60/*.uf2 dist/
+          cp dist/go60/manifest.json dist/go60-manifest.json
           rm -rf dist/go60
       - name: Create or update GitHub Release
         env:
