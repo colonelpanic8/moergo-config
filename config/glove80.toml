@@ -42,9 +42,9 @@ keys = """
 KC_F1    KC_F2    KC_F3   KC_F4    KC_F5    --       KC_ESC        KC_BSPC  --       KC_F6  KC_F7    KC_F8    KC_F9          KC_F10
 KC_EQL   KC_1     KC_2    KC_3     KC_4     KC_5     TD(0)         TG(4)    KC_6     KC_7   KC_8     KC_9     KC_0           KC_MINS
 KC_TAB   KC_Q     KC_W    KC_E     KC_R     KC_T     MO(2)         KC_LGUI  KC_Y     KC_U   KC_I     KC_O     KC_P           KC_BSLS
-KC_LCTL  KC_A     KC_S    KC_D     KC_F     KC_G     KC_BSPC       KC_SPC   KC_H     KC_J   KC_K     KC_L     LT(1,KC_SCLN)  KC_QUOT
+KC_LCTL  KC_A     KC_S    KC_D     KC_F     KC_G     KC_BSPC       KC_SPC   KC_H     KC_J   KC_K     KC_L     LT(1,KC_SCLN,lower)  KC_QUOT
 KC_LSFT  KC_Z     KC_X    KC_C     KC_V     KC_B     KC_LGUI       KC_ENT   KC_N     KC_M   KC_COMM  KC_DOT   KC_SLSH        KC_RSFT
-KC_GRV   MO(1)    MO(5)   KC_LEFT  KC_RGHT  --       KC_LALT       KC_RGUI  --       KC_UP  KC_DOWN  KC_LBRC  KC_RBRC        TG(3)
+KC_GRV   MO(1)    MO(5)   KC_LEFT  KC_RGHT  --       KC_LALT       LM(6,MOD_RGUI)  --       KC_UP  KC_DOWN  KC_LBRC  KC_RBRC        TG(3)
 """
 
 # --- Layer 1: Lower (symbols + media) ---------------------------------------
@@ -96,8 +96,8 @@ name = "Magic"
 all = true
 action = "KC_NO"
 
-# F1-F5 — the same keys whose LEDs indicate layers 1-5 — latch those
-# layers on/off.
+# F1-F5 latch layers 1-5 on/off. F2-F5 also carry the blue indicators;
+# Lower instead highlights all of its bound keys in magenta.
 [[layer.key]]
 key = [0, 0]
 action = "TG(1)"
@@ -556,6 +556,21 @@ layer = 5
 key = [3, 8]
 color = "#c02020"
 
+# --- Layer 6: Browser navigation --------------------------------------------
+# Holding the right GUI thumb keeps Super active and makes the physical
+# left/right arrow pair send the standard browser Back/Forward usages.
+[[layer]]
+id = "browser_nav"
+name = "Browser Nav"
+
+[[layer.key]]
+key = [5, 3]
+action = "KC_WBAK"
+
+[[layer.key]]
+key = [5, 4]
+action = "KC_WFWD"
+
 # --- Morse table -------------------------------------------------------------
 # Morse 0 is the Paseo thumb key, addressed as TD(0) on the base layer: tap
 # Delete, hold for layer 5. It exists as a morse rather than an LT so its hold
@@ -569,9 +584,28 @@ tap = "KC_DEL"
 hold = "MO(5)"
 hold_timeout_ms = 180
 
+[behavior]
+combo_timeout_ms = 50
+oneshot_timeout_ms = 1000
+tap_interval_ms = 20
+tap_capslock_interval_ms = 20
+oneshot_activate_on_keypress = false
+oneshot_quick_release = false
+
+[behavior.morse]
+enable_flow_tap = false
+prior_idle_ms = 120
+
+[behavior.morse.default_profile]
+hold_timeout_ms = 250
+gap_timeout_ms = 250
+
+[behavior.morse.profiles.lower]
+hold_timeout_ms = 160
+
 [lighting]
 brightness = 255
-output_mode = "powered-only"
+output_mode = "always-on"
 wake_layers = [2]
 scene_policy = "active-stack"
 
@@ -599,13 +633,13 @@ speed = 32
 #
 # Keep Crosshair's full live tuning pinned for when it is selected by cycling.
 [lighting.effects.params.Crosshair]
-"Arm hue" = 0
-"Arm width" = 11
-Crosses = 1
-"Duration x10ms" = 90
-"Key hue" = 173
+"Arm hue" = 172
+"Arm width" = 8
+Crosses = 4
+"Duration x10ms" = 16
+"Key hue" = 16
 Motion = 0
-"Pulse width" = 170
+"Pulse width" = 56
 
 # Comet flies one body to each pressed key instead of lighting the key where
 # it was pressed, so it arrives late and swings wide of a key it is redirected
@@ -626,10 +660,10 @@ Momentum = 168
 # units of 10 ms, so 5 is a drop every 50 ms; the slot count then caps how many
 # are airborne.
 [lighting.effects.params.Rain]
-Drops = 11
+Drops = 6
 "Rain hue" = 172
-"Spawn x10ms" = 5
-Trail = 161
+"Spawn x10ms" = 30
+Trail = 128
 Width = 14
 
 # Give Magic an opaque black floor over every otherwise-unpainted LED. This
@@ -1000,12 +1034,8 @@ color = "#000000"
 # [[layer.bind]] entries in the layer section above: brightness controls are
 # yellow, effect cycling is white, and palette cycling is magenta.
 
-# Active-layer indicators: F1-F5 show layers 1-5 in blue while active.
-
-[[lighting.scene]]
-layer = 1
-key = [0, 0]
-color = "#0000ff"
+# Active-layer indicators: F2-F5 show layers 2-5 in blue while active.
+# Lower highlights all of its bound keys in magenta below.
 
 [[lighting.scene]]
 layer = 2
@@ -1029,6 +1059,145 @@ color = "#0000ff"
 
 # Games and Paseo key highlights live beside their [[layer.bind]] entries
 # above; a scene on a layer only shows while that layer is active.
+
+# Lower: illuminate every key whose binding overrides the base layer. These
+# use the separate conditional table because the scene table already carries
+# the Magic blackout and has room for only seven more cells.
+
+[[lighting.conditional_scene]]
+key = [2, 1]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [2, 2]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [2, 3]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [2, 4]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [2, 6]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 0]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 1]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 2]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 3]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 4]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 5]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 7]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 8]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 9]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 10]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 11]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [3, 12]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [4, 1]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [4, 2]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [4, 3]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [4, 4]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [5, 1]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [5, 2]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [5, 3]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [5, 4]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [5, 9]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
+
+[[lighting.conditional_scene]]
+key = [5, 10]
+color = "#ff00ff"
+layer = { layer = 1, active = true }
 
 # Battery gauges on the Magic layer, five LEDs per half. Order matters:
 # later rules win the LEDs they share, so the level bands come first, the
