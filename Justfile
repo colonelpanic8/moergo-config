@@ -98,3 +98,7 @@ attention-check:
 
 attention-run *args:
     nix develop ./{{ firmware_repo }} --command cargo run --bin rmk-attentiond -- {{ args }}
+
+flash-check:
+    python3 -m unittest discover -s tests -v
+    bash -n lib/moergo-safe-flash.sh bin/glove80-safe-flash bin/go60-safe-flash

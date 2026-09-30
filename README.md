@@ -249,6 +249,15 @@ firmware label: this configuration repository's commit, the pinned
 The release manifest records the full configuration, product, and RMK commits.
 A dirty working tree is marked in both places.
 
+The `bin/glove80-safe-flash` and `bin/go60-safe-flash` helpers share one flashing
+implementation. Both validate the requested image and any `--recover` image
+against the selected half's family ID and application flash range before
+entering the bootloader. Their health watch queries Rynk on the named board;
+`--peripheral` additionally requires the right-half split connection. A failed
+health watch can trigger recovery, so disconnect other Rynk USB keyboards
+before using these helpers. `--no-watch` skips the health watch, not image
+validation. Run `just flash-check` for the simulated-device regression tests.
+
 ## Lighting controls and indicators
 
 See [Lighting model](docs/lighting.md) for the topology, selector syntax,

@@ -3,3 +3,4 @@
 /target/
 /dependencies/moergo-rmk/dist/
 .claude-session/
+__pycache__/
