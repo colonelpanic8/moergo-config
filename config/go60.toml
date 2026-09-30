@@ -292,11 +292,19 @@ scene = [
   { layer = 2, led = 15, color = "#ff00ff" },
 
   # Layers 2-5 indicate on number keys 2-5. Lower's number-1 indicator is part
-  # of its magenta bound-key rules below.
+  # of its magenta bound-key highlight.
   { layer = 2, led = 17, color = "#0000ff" },
   { layer = 3, led = 12, color = "#0000ff" },
   { layer = 4, led = 7, color = "#0000ff" },
   { layer = 5, led = 3, color = "#0000ff" },
+
+  # Lower's bound-key highlight on 1-5; the rest is in conditional_scene,
+  # split this way to fit both 80-cell tables.
+  { layer = 1, key = [0, 1], color = "#ff00ff" },
+  { layer = 1, key = [0, 2], color = "#ff00ff" },
+  { layer = 1, key = [0, 3], color = "#ff00ff" },
+  { layer = 1, key = [0, 4], color = "#ff00ff" },
+  { layer = 1, key = [0, 5], color = "#ff00ff" },
 
   # Games: W/A/S/D and Space.
   { layer = 3, led = 18, color = "#a03000" },
@@ -317,14 +325,8 @@ scene = [
 ]
 
 conditional_scene = [
-  # Lower: illuminate every key whose binding overrides the base layer. These
-  # use the separate 80-cell conditional table because the scene table already
-  # carries the Magic blackout and has room for only seven more cells.
-  { key = [0, 1], color = "#ff00ff", layer = { layer = 1, active = true } },
-  { key = [0, 2], color = "#ff00ff", layer = { layer = 1, active = true } },
-  { key = [0, 3], color = "#ff00ff", layer = { layer = 1, active = true } },
-  { key = [0, 4], color = "#ff00ff", layer = { layer = 1, active = true } },
-  { key = [0, 5], color = "#ff00ff", layer = { layer = 1, active = true } },
+  # Lower: illuminate every key whose binding overrides the base layer (1-5
+  # are scene cells). Neither 80-cell table has room for all of them.
   { key = [0, 8], color = "#ff00ff", layer = { layer = 1, active = true } },
   { key = [0, 9], color = "#ff00ff", layer = { layer = 1, active = true } },
   { key = [0, 10], color = "#ff00ff", layer = { layer = 1, active = true } },
