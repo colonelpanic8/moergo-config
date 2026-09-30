@@ -40,8 +40,9 @@ just layout os mac config/glove80.toml -o config/glove80-mac.toml
 ```
 
 Generates the other OS's variant of a config by swapping Ctrl and GUI in
-every action binding: keymap grids, `[[layer.bind]]` overrides, morse
-tap/hold actions, combo keys and outputs, forks, and macro operations.
+every action binding: keymap grids, `[[layer.key]]` overrides, morse tap/hold
+actions, combo keys and outputs, forks, and macro operations. The offline
+transforms also recognize `[[layer.bind]]` in older configuration files.
 Bare keycodes (`KC_LCTL`), wrapper calls (`LCTL(KC_C)`), `MOD()` masks
 (`MOD_LCTL`), and typed-morse modifier names (`LCtrl`) are all covered.
 The swap is its own inverse, so `os pc` on a mac-canonical file does the
@@ -244,3 +245,35 @@ The tool's own tests run with the rest of the host crate:
 ```sh
 nix develop ./dependencies/moergo-rmk --command cargo test --bin moergo-layout
 ```
+
+## `migrate` — Glove80 ↔ Go60
+
+```sh
+just layout migrate go60 config/glove80.toml -o /tmp/migrated-go60.toml
+just layout migrate glove80 config/go60.toml -o /tmp/migrated-glove80.toml
+./bin/moergo-control config validate /tmp/migrated-go60.toml
+```
+
+This produces an offline draft, with a migration report on stderr. Source
+rows identify the board (omitted means Glove80). Number and letter rows keep
+their finger columns. Glove80 thumb T4–T6 map to Go60 T1–T3;
+T1–T3 map to Go60 bottom-row columns 4,3,2 on the left and 11,10,9 on
+the right (zero-based). The inverse uses the same correspondence.
+
+Glove80's function row and bottom finger row have no destination; their
+bound actions are reported. Extra Glove80 keys start transparent. All layer
+slots, names, macros, morse records, and forks remain in order. Matrix-key
+selectors and hold-trigger positions move with the keys. A positional combo
+is omitted entirely if any of its positions cannot map. Migration fails if
+a nonempty hold-trigger list would become empty.
+
+Numeric LED IDs, key IDs, and zone selectors are omitted with a report because
+they require board-specific topology. Bluetooth names are omitted. Pointing
+and auto-mouse policies are omitted when moving to Glove80. TOML comments
+and formatting are not retained.
+
+Review the report and thumb ergonomics, restore any missing layer activators
+or essential actions, and check action-based combo inputs. Run `config validate`
+and the destination's `config diff` before applying the reviewed file with
+`moergo-control`. Migration does not contact a keyboard or change the managed
+runtime TOMLs.

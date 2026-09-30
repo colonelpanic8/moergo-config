@@ -168,7 +168,7 @@ pub struct Layer {
     pub index: usize,
     pub name: String,
     pub cells: Vec<Cell>,
-    /// Action strings from `[[layer.bind]]` overrides.
+    /// Action strings from `[[layer.bind]]` and `[[layer.key]]` overrides.
     pub binds: Vec<Token>,
 }
 
@@ -256,6 +256,7 @@ pub fn parse(text: &str) -> Result<Config> {
         }
         let binds = table_array(entry, "bind")
             .iter()
+            .chain(table_array(entry, "key").iter())
             .filter_map(|b| b.get("action").and_then(|v| v.as_str()))
             .map(|s| Token(s.to_string()))
             .collect();

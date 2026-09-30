@@ -193,12 +193,7 @@ pub fn apply_os_swap(text: &str) -> Result<String> {
     let mut doc: DocumentMut = text.parse().context("parsing config TOML")?;
 
     for layer in array_of_tables(&mut doc, "layer") {
-        rewrite_grid(layer, &map);
-        if let Some(binds) = layer.get_mut("bind").and_then(as_array_of_tables_mut) {
-            for bind in binds.iter_mut() {
-                rewrite_string(bind, "action", &map);
-            }
-        }
+        rewrite_layer_actions(layer, &map);
     }
     for morse in array_of_tables(&mut doc, "morse") {
         for field in ["tap", "hold", "double_tap", "hold_after_tap"] {
@@ -251,10 +246,21 @@ pub fn apply_alpha(text: &str, layout: &str, layers: Option<&[usize]>) -> Result
     }
     for (index, layer) in all.into_iter().enumerate() {
         if selected.contains(&index) {
-            rewrite_grid(layer, &map);
+            rewrite_layer_actions(layer, &map);
         }
     }
     Ok(doc.to_string())
+}
+
+fn rewrite_layer_actions(layer: &mut toml_edit::Table, map: &HashMap<&str, &str>) {
+    rewrite_grid(layer, map);
+    for field in ["bind", "key"] {
+        if let Some(entries) = layer.get_mut(field).and_then(as_array_of_tables_mut) {
+            for entry in entries.iter_mut() {
+                rewrite_string(entry, "action", map);
+            }
+        }
+    }
 }
 
 pub(crate) fn rewrite_grid(layer: &mut toml_edit::Table, map: &HashMap<&str, &str>) {
@@ -409,6 +415,43 @@ output = "LMT(4, MOD_LCTL, KC_TAB)"
         assert!(games.contains("KC_W  KC_A"));
         // Modifiers pass through.
         assert!(remapped.contains("KC_LCTL"));
+    }
+
+    #[test]
+    fn transforms_sparse_actions_without_changing_lighting_or_other_layers() {
+        let text = r##"
+[[layer]]
+name = "Base"
+[[layer.bind]]
+key = [0, 0]
+action = "LCTL(KC_S)"
+[[layer.key]]
+key = [0, 1]
+action = "LCTL(KC_S)" # binding comment
+color = "#123456"
+[[layer.key.rule]]
+color = "#abcdef"
+[[layer.key]]
+key = [0, 2]
+color = "#fedcba"
+[[layer]]
+name = "Games"
+[[layer.key]]
+key = [0, 0]
+action = "LCTL(KC_S)"
+"##;
+        let swapped = apply_os_swap(text).unwrap();
+        assert_eq!(swapped.matches("LGUI(KC_S)").count(), 3);
+        assert!(swapped.contains("# binding comment"));
+        let remapped = apply_alpha(text, "colemak", None).unwrap();
+        assert_eq!(remapped.matches("LCTL(KC_R)").count(), 2);
+        assert_eq!(remapped.matches("LCTL(KC_S)").count(), 1);
+        for color in ["#123456", "#abcdef", "#fedcba"] {
+            assert!(swapped.contains(color));
+            assert!(remapped.contains(color));
+        }
+        let parsed: toml::Value = remapped.parse().unwrap();
+        assert!(parsed["layer"][0]["key"][1].get("action").is_none());
     }
 
     #[test]

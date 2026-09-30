@@ -452,6 +452,34 @@ hold_timeout_ms = 200
 "#;
 
     #[test]
+    fn sparse_key_actions_contribute_to_reachability_and_behavior_usage() {
+        let config = crate::model::parse(
+            r##"
+[[layer]]
+name = "Base"
+[[layer.key]]
+key = [0, 0]
+action = "MO(1)"
+[[layer.key]]
+key = [0, 1]
+action = "TD(0)"
+[[layer.key]]
+key = [0, 2]
+color = "#ff0000"
+[[layer]]
+name = "Navigation"
+[[morse]]
+name = "tap"
+tap = "KC_A"
+"##,
+        )
+        .unwrap();
+        let report = analyze(&config);
+        assert!(report.warnings.is_empty(), "{:?}", report.warnings);
+        assert!(report.text.contains("MO at L0 bind"));
+    }
+
+    #[test]
     fn finds_orphans_and_unreachable_layers() {
         let config = parse(FIXTURE).unwrap();
         let report = analyze(&config);

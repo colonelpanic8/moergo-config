@@ -15,6 +15,7 @@
           ./Cargo.toml
           ./Cargo.lock
           ./src
+          ./presets
         ];
       };
       package = pkgs.rustPlatform.buildRustPackage {

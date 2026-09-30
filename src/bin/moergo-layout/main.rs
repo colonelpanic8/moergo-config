@@ -4,6 +4,7 @@
 //! `moergo-control config diff/apply` workflow.
 
 mod address;
+mod migrate;
 mod model;
 mod preset;
 mod transform;
@@ -26,6 +27,14 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Migrate a runtime config between Glove80 and Go60; report losses on stderr
+    Migrate {
+        #[arg(value_parser = ["glove80", "go60"])]
+        target: String,
+        config: PathBuf,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
     /// Report behavior usage: layer activators and reachability, morse,
     /// macro, fork, and morse-profile references, orphans, and dangling
     /// references
@@ -124,6 +133,20 @@ impl AlphaLayout {
 
 fn main() -> Result<()> {
     match Cli::parse().command {
+        Command::Migrate {
+            target,
+            config,
+            output,
+        } => {
+            let text = std::fs::read_to_string(&config)
+                .with_context(|| format!("reading {}", config.display()))?;
+            let (result, notes) =
+                migrate::migrate(&text, address::Board::from_name(&target).unwrap())?;
+            for note in notes {
+                eprintln!("{note}");
+            }
+            emit(result, output)
+        }
         Command::Usage {
             configs,
             keycodes,
