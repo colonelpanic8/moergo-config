@@ -118,7 +118,7 @@ KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS -- -- KC_TRNS KC_F18 KC_TRNS KC_
 
 # Held from the hyper key (right GUI position; also Mac-mode Hyper) or the
 # left Control key (caps lock position) via LM(6, ...): the modifier works
-# as usual but the right pad's cursor runs at 6x its normal sensitivity while
+# as usual but the right pad's cursor runs at 3x its normal sensitivity while
 # it's down.
 [[layer]]
 id = "layer6"
@@ -199,8 +199,8 @@ mode = "press"
 layer = 6
 device_id = 1
 mode = "cursor"
-multiplier_x = 12
-multiplier_y = 12
+multiplier_x = 6
+multiplier_y = 6
 
 [[pointing.override]]
 layer = 7
