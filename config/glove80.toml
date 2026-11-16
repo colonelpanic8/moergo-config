@@ -1,5 +1,4 @@
 # Ivan's Glove80 runtime configuration for the current moergo-rmk firmware.
-bluetooth_name = "WhiteG80 {slot}"
 default_layer = 0
 #
 # This personal state is intentionally separate from the stock compiled
@@ -1371,3 +1370,8 @@ battery = { node = 1, min_level = 81, charge = "charging" }
 key = [3, 0]
 color = "#ff2000"
 indicators = { caps_lock = true }
+
+# Hardware-derived serials, shared across hosts and Bluetooth slots.
+[bluetooth_names]
+bcbd6d = "WhiteIG80"
+7fb875 = "BlackIG80"

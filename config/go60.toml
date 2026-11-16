@@ -1,5 +1,4 @@
 rows = 5
-bluetooth_name = "Go60"
 default_layer = 0
 
 [[layer]]
@@ -461,3 +460,6 @@ Width = 14
 
 [lighting.effects.params.Keyfall]
 Gravity = 1
+
+[bluetooth_names]
+ba66ba = "IGo60"
