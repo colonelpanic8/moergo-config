@@ -16,13 +16,15 @@ KC_LSFT KC_Z KC_X KC_C KC_V KC_B -- -- KC_N KC_M KC_COMM KC_DOT KC_SLSH KC_RSFT
 # F-keys sit on the number they are named after: F1 on 1 through F10 on 0.
 # That keeps one rule across the board — the number key N is layer N's toggle
 # on Magic, its indicator LED, and Fn on Lower.
+# Q/E/R flank the arrows with Android's split-screen shortcuts: current app to
+# the left half, to the right half, and back to full screen.
 [[layer]]
 id = "layer1"
 name = "Lower"
 keys = """
 
 KC_TRNS KC_F1 KC_F2 KC_F3 KC_F4 KC_F5 KC_TRNS KC_TRNS KC_F6 KC_F7 KC_F8 KC_F9 KC_F10 TG(1)
-KC_TRNS KC_TRNS KC_UP KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_MPRV KC_MNXT KC_TRNS
+KC_TRNS LGUI(LCTL(KC_LEFT)) KC_UP LGUI(LCTL(KC_RGHT)) LGUI(LCTL(KC_UP)) KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_MPRV KC_MNXT KC_TRNS
 KC_CAPS KC_LEFT KC_DOWN KC_RGHT KC_TRNS KC_TRNS KC_TRNS TG(4) KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS
 KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS KC_TRNS -- -- KC_HOME KC_END KC_TRNS KC_TRNS KC_TRNS TG(3)
 -- -- KC_TRNS KC_TRNS KC_TRNS -- -- -- -- KC_VOLU KC_VOLD KC_TRNS -- --
